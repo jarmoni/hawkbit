@@ -1,0 +1,93 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>org.eclipse.hawkbit</groupId>
+      <artifactId>hawkbit-examples-parent</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+   </parent>
+   <artifactId>hawkbit-example-docker</artifactId>
+   <name>hawkBit Docker Examples</name>
+   <description>hawkBit example app docker </description>
+
+
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>io.fabric8</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>0.14.2</version>
+            <configuration>
+               <dockerHost>tcp://192.168.99.100:2376</dockerHost>
+               <verbose>true</verbose>
+               <certPath>/Users/kaizimmerm/.docker/machine/machines/default</certPath>
+               <images>
+                  <image>
+                     <alias>hawkbit</alias>
+                     <name>hawbit/example-app:${project.version}</name>
+
+                     <build>
+                        <from>java:8</from>
+                        <assembly>
+                           <inline>
+                              <dependencySets>
+                                 <dependencySet>
+                                    <includes>
+                                       <include>org.eclipse.hawkbit:hawkbit-example-app</include>
+                                    </includes>
+                                    <outputDirectory>.</outputDirectory>
+                                    <outputFileNameMapping>hawkbit-example-app.jar</outputFileNameMapping>
+                                 </dependencySet>
+                                 <dependencySet>
+                                    <includes>
+                                       <include>org.eclipse.hawkbit:hawkbit-device-simulator</include>
+                                    </includes>
+                                    <outputDirectory>.</outputDirectory>
+                                    <outputFileNameMapping>hawkbit-device-simulator.jar</outputFileNameMapping>
+                                 </dependencySet>
+                              </dependencySets>
+                           </inline>
+                        </assembly>
+                        <ports>
+                           <port>8080</port>
+                        </ports>
+                        <entryPoint>
+                           <exec>
+                              <args>java</args>
+                              <args>-jar</args>
+                              <args>maven/hawkbit-example-app.jar</args>
+                           </exec>
+                        </entryPoint>
+                     </build>
+                  </image>
+
+                  <image>
+                     <alias>rabbit</alias>
+                     <name>rabbitmq:latest</name>
+                     <run>
+                        <wait>
+                           <log>Server startup complete</log>
+                           <time>5000</time>
+                        </wait>
+                     </run>
+                  </image>
+               </images>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
+
+   <dependencies>
+      <!-- Hawkbit -->
+      <dependency>
+         <groupId>org.eclipse.hawkbit</groupId>
+         <artifactId>hawkbit-example-app</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.hawkbit</groupId>
+         <artifactId>hawkbit-device-simulator</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+   </dependencies>
+</project>
