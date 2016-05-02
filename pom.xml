@@ -31,6 +31,7 @@
       <module>hawkbit-system-resource</module>
       <module>hawkbit-mgmt-api</module>
       <module>hawkbit-mgmt-resource</module>
+      <module>hawkbit-mgmt-resource-mapper</module>
       <module>hawkbit-ddi-api</module>
       <module>hawkbit-ddi-resource</module>
       <module>hawkbit-dmf-api</module>
@@ -109,6 +110,7 @@
       <commons.lang>2.3</commons.lang>
       <json.version>20141113</json.version>
       <rsql-parser.version>2.0.0</rsql-parser.version>
+      <org.mapstruct.version>1.1.0.Beta1</org.mapstruct.version>
       <!-- Misc libraries versions - END -->
 
       <!-- Release - START -->
@@ -153,7 +155,7 @@
 
 
    <build>
-      <plugins>
+     <plugins>
          <plugin>
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin</artifactId>
@@ -573,6 +575,11 @@
                   <artifactId>spring-boot-starter-logging</artifactId>
                </exclusion>
             </exclusions>
+         </dependency>
+         <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-jdk8</artifactId>
+            <version>${org.mapstruct.version}</version>
          </dependency>
          <dependency>
             <groupId>org.json</groupId>

@@ -1,0 +1,77 @@
+<!--
+    Copyright (c) 2015 Bosch Software Innovations GmbH and others.
+
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Eclipse Public License v1.0
+    which accompanies this distribution, and is available at
+    http://www.eclipse.org/legal/epl-v10.html
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>org.eclipse.hawkbit</groupId>
+      <artifactId>hawkbit-parent</artifactId>
+      <version>0.2.0-SNAPSHOT</version>
+   </parent>
+   <artifactId>hawkbit-mgmt-resource-mapper</artifactId>
+   <name>hawkBit :: REST Managment Mapper for Resources</name>
+   <properties>
+      <m2e.apt.activation>jdt_apt</m2e.apt.activation>
+   </properties>
+
+      <build>
+         <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-compiler-plugin</artifactId>
+               <configuration>
+                  <source>1.8</source>
+                  <target>1.8</target>
+                  <annotationProcessorPaths>
+                     <path>
+                        <groupId>org.mapstruct</groupId>
+                        <artifactId>mapstruct-processor</artifactId>
+                        <version>${org.mapstruct.version}</version>
+                     </path>
+                  </annotationProcessorPaths>
+                  <compilerArgs>
+                     <compilerArg>
+                        -Amapstruct.suppressGeneratorTimestamp=false
+                     </compilerArg>
+                     <compilerArg>
+                        -Amapstruct.suppressGeneratorVersionInfoComment=false
+                     </compilerArg>
+                     <compilerArg>
+                        -Amapstruct.defaultComponentModel=spring
+                     </compilerArg>
+                  </compilerArgs>
+               </configuration>
+            </plugin>
+         </plugins>
+      </build>
+
+
+   <dependencies>
+      <dependency>
+         <groupId>org.eclipse.hawkbit</groupId>
+         <artifactId>hawkbit-repository</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.hawkbit</groupId>
+         <artifactId>hawkbit-rest-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.eclipse.hawkbit</groupId>
+         <artifactId>hawkbit-mgmt-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.mapstruct</groupId>
+         <artifactId>mapstruct-jdk8</artifactId>
+      </dependency>
+   </dependencies>
+</project>

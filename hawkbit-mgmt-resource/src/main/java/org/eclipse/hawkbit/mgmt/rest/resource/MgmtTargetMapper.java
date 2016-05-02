@@ -294,7 +294,6 @@ public final class MgmtTargetMapper {
 
     private static MgmtActionStatus toResponse(final ActionStatus actionStatus) {
         final MgmtActionStatus result = new MgmtActionStatus();
-
         result.setMessages(actionStatus.getMessages());
         result.setReportedAt(actionStatus.getCreatedAt());
         result.setStatusId(actionStatus.getId());
