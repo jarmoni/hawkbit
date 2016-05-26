@@ -106,7 +106,7 @@ public class CreateOrUpdateFilterTable extends Table {
         if (custFUIEvent == CustomFilterUIEvent.TARGET_DETAILS_VIEW
                 || custFUIEvent == CustomFilterUIEvent.CREATE_NEW_FILTER_CLICK) {
             UI.getCurrent().access(() -> populateTableData());
-        } else if (custFUIEvent == CustomFilterUIEvent.FILTER_TARGET_BY_QUERY) {
+        } else if (custFUIEvent == CustomFilterUIEvent.ON_FILTER_QUERY_EDIT) {
             UI.getCurrent().access(() -> onQuery());
         }
     }
