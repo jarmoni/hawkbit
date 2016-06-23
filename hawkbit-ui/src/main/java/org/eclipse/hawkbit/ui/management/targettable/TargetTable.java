@@ -840,7 +840,7 @@ public class TargetTable extends AbstractTable<Target, TargetIdName> implements 
     private void refreshTargets() {
         final LazyQueryContainer targetContainer = (LazyQueryContainer) getContainerDataSource();
         final int size = targetContainer.size();
-        if (size < SPUIDefinitions.MAX_TARGET_TABLE_ENTRIES) {
+        if (size < SPUIDefinitions.MAX_TABLE_ENTRIES) {
             refreshTablecontainer();
         } else {
             // If table is not refreshed , explicitly target total count and
@@ -1026,8 +1026,8 @@ public class TargetTable extends AbstractTable<Target, TargetIdName> implements 
         size = getTargetsCountWithFilter(totalTargetsCount, status, targetTags, distributionId, searchText,
                 noTagClicked, pinnedDistId);
 
-        if (size > SPUIDefinitions.MAX_TARGET_TABLE_ENTRIES) {
-            managementUIState.setTargetsTruncated(size - SPUIDefinitions.MAX_TARGET_TABLE_ENTRIES);
+        if (size > SPUIDefinitions.MAX_TABLE_ENTRIES) {
+            managementUIState.setTargetsTruncated(size - SPUIDefinitions.MAX_TABLE_ENTRIES);
         }
     }
 

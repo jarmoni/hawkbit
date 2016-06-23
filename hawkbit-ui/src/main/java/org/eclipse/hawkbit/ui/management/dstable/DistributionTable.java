@@ -20,6 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.hawkbit.repository.DistributionSetManagement;
 import org.eclipse.hawkbit.repository.SpPermissionChecker;
 import org.eclipse.hawkbit.repository.TargetManagement;
+import org.eclipse.hawkbit.repository.eventbus.event.DistributionCreatedEvent;
+import org.eclipse.hawkbit.repository.eventbus.event.DistributionDeletedEvent;
+import org.eclipse.hawkbit.repository.eventbus.event.DistributionSetUpdateEvent;
 import org.eclipse.hawkbit.repository.model.DistributionSet;
 import org.eclipse.hawkbit.repository.model.DistributionSetTagAssignmentResult;
 import org.eclipse.hawkbit.repository.model.Target;
@@ -105,7 +108,36 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
         notAllowedMsg = i18n.get("message.action.not.allowed");
     }
 
+    @EventBusListenerMethod(scope = EventScope.SESSION)
+    void onEvents(final List<?> events) {
+        final Object firstEvent = events.get(0);
+        if (DistributionDeletedEvent.class.isInstance(firstEvent)) {
+            onDistributionDeleteEvent((List<DistributionDeletedEvent>) events);
+        } else if (DistributionCreatedEvent.class.isInstance(firstEvent)
+                && ((DistributionCreatedEvent) firstEvent).getEntity().isComplete()) {
+            onDistributionCreatedEvents();
+        }
+    }
+
+    @EventBusListenerMethod(scope = EventScope.SESSION)
+    void onEvents(final DistributionSetUpdateEvent event) {
+        final DistributionSet ds = event.getEntity();
+        final DistributionSetIdName lastSelectedDsIdName = managementUIState.getLastSelectedDsIdName();
+        final List<DistributionSetIdName> visibleItemIds = (List<DistributionSetIdName>) getVisibleItemIds();
+
+        // refresh the details tabs only if selected ds is updated
+     // refresh the details tabs only if selected ds is updated 
+        if (lastSelectedDsIdName != null && lastSelectedDsIdName.getId().equals(ds.getId())) {
+            // update table row+details layout
+            eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.UPDATED_ENTITY, ds));
+        } else if (visibleItemIds.stream().filter(e -> e.getId().equals(ds.getId())).findFirst().isPresent()) {
+            //update the name/version details visible in table
+            UI.getCurrent().access(() -> updateDistributionInTable(event.getEntity()));
+        }
+    }
+
     /**
+     * 
      * DistributionTableFilterEvent.
      * 
      * @param event
@@ -137,7 +169,6 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
             return;
         }
         UI.getCurrent().access(() -> updateDistributionInTable(event.getEntity()));
-
     }
 
     @EventBusListenerMethod(scope = EventScope.SESSION)
@@ -166,12 +197,13 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
 
     @EventBusListenerMethod(scope = EventScope.SESSION)
     void onEvent(final ManagementUIEvent managementUIEvent) {
-        UI.getCurrent().access(() -> {
-            if (managementUIEvent == ManagementUIEvent.UNASSIGN_DISTRIBUTION_TAG
-                    || managementUIEvent == ManagementUIEvent.ASSIGN_DISTRIBUTION_TAG) {
-                refreshFilter();
-            }
-        });
+        UI.getCurrent().access(
+                () -> {
+                    if (managementUIEvent == ManagementUIEvent.UNASSIGN_DISTRIBUTION_TAG
+                            || managementUIEvent == ManagementUIEvent.ASSIGN_DISTRIBUTION_TAG) {
+                        refreshFilter();
+                    }
+                });
     }
 
     @Override
@@ -186,9 +218,8 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
         final BeanQueryFactory<DistributionBeanQuery> distributionQF = new BeanQueryFactory<>(
                 DistributionBeanQuery.class);
         distributionQF.setQueryConfiguration(queryConfiguration);
-        return new LazyQueryContainer(
-                new LazyQueryDefinition(true, SPUIDefinitions.PAGE_SIZE, SPUILabelDefinitions.VAR_DIST_ID_NAME),
-                distributionQF);
+        return new LazyQueryContainer(new LazyQueryDefinition(true, SPUIDefinitions.PAGE_SIZE,
+                SPUILabelDefinitions.VAR_DIST_ID_NAME), distributionQF);
     }
 
     private Map<String, Object> prepareQueryConfigFilters() {
@@ -198,8 +229,8 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
         managementUIState.getDistributionTableFilters().getPinnedTargetId()
                 .ifPresent(value -> queryConfig.put(SPUIDefinitions.ORDER_BY_PINNED_TARGET, value));
         final List<String> list = new ArrayList<>();
-        queryConfig.put(SPUIDefinitions.FILTER_BY_NO_TAG,
-                managementUIState.getDistributionTableFilters().isNoTagSelected());
+        queryConfig.put(SPUIDefinitions.FILTER_BY_NO_TAG, managementUIState.getDistributionTableFilters()
+                .isNoTagSelected());
         if (!managementUIState.getDistributionTableFilters().getDistSetTags().isEmpty()) {
             list.addAll(managementUIState.getDistributionTableFilters().getDistSetTags());
         }
@@ -336,15 +367,15 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
     private void assignTargetTag(final DragAndDropEvent event) {
         final AbstractSelectTargetDetails dropData = (AbstractSelectTargetDetails) event.getTargetDetails();
         final Object distItemId = dropData.getItemIdOver();
-        final String targetTagName = HawkbitCommonUtil.removePrefix(
-                event.getTransferable().getSourceComponent().getId(), SPUIDefinitions.TARGET_TAG_ID_PREFIXS);
+        final String targetTagName = HawkbitCommonUtil.removePrefix(event.getTransferable().getSourceComponent()
+                .getId(), SPUIDefinitions.TARGET_TAG_ID_PREFIXS);
         // get all the targets assigned to the tag
         // assign dist to those targets
         final List<Target> assignedTargets = targetService.findTargetsByTag(targetTagName);
         if (!assignedTargets.isEmpty()) {
             final Set<TargetIdName> targetDetailsList = new HashSet<>();
-            assignedTargets.forEach(target -> targetDetailsList
-                    .add(new TargetIdName(target.getId(), target.getControllerId(), target.getName())));
+            assignedTargets.forEach(target -> targetDetailsList.add(new TargetIdName(target.getId(), target
+                    .getControllerId(), target.getName())));
             assignTargetToDs(getItem(distItemId), targetDetailsList);
         } else {
             notification.displaySuccess(i18n.get("message.no.targets.assiged.fortag", new Object[] { targetTagName }));
@@ -370,8 +401,7 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
             final Long distId = (Long) item.getItemProperty("id").getValue();
             final String distName = (String) item.getItemProperty("name").getValue();
             final String distVersion = (String) item.getItemProperty("version").getValue();
-            final DistributionSetIdName distributionSetIdName = new DistributionSetIdName(distId, distName,
-                    distVersion);
+            final DistributionSetIdName distributionSetIdName = new DistributionSetIdName(distId, distName, distVersion);
             showOrHidePopupAndNotification(validate(targetDetailsList, distributionSetIdName));
         }
     }
@@ -416,15 +446,14 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
 
     private Boolean isNoTagButton(final String tagData, final String targetNoTagData) {
         if (tagData.equals(targetNoTagData)) {
-            notification.displayValidationError(
-                    i18n.get("message.tag.cannot.be.assigned", new Object[] { i18n.get("label.no.tag.assigned") }));
+            notification.displayValidationError(i18n.get("message.tag.cannot.be.assigned",
+                    new Object[] { i18n.get("label.no.tag.assigned") }));
             return true;
         }
         return false;
     }
 
-    private String validate(final Set<TargetIdName> targetDetailsList,
-            final DistributionSetIdName distributionSetIdName) {
+    private String validate(final Set<TargetIdName> targetDetailsList, final DistributionSetIdName distributionSetIdName) {
         String pendingActionMessage = null;
         for (final TargetIdName trgtNameId : targetDetailsList) {
             if (null != trgtNameId) {
@@ -459,8 +488,8 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
     }
 
     private void updateDistributionInTable(final DistributionSet editedDs) {
-        final Item item = getContainerDataSource()
-                .getItem(new DistributionSetIdName(editedDs.getId(), editedDs.getName(), editedDs.getVersion()));
+        final Item item = getContainerDataSource().getItem(
+                new DistributionSetIdName(editedDs.getId(), editedDs.getName(), editedDs.getVersion()));
         updateEntity(editedDs, item);
     }
 
@@ -477,8 +506,8 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
     }
 
     private void styleDistributionTableOnPinning() {
-        final Target targetObj = targetService.findTargetByControllerIDWithDetails(
-                managementUIState.getDistributionTableFilters().getPinnedTargetId().get());
+        final Target targetObj = targetService.findTargetByControllerIDWithDetails(managementUIState
+                .getDistributionTableFilters().getPinnedTargetId().get());
 
         if (targetObj != null) {
             final DistributionSet assignedDistribution = targetObj.getAssignedDistributionSet();
@@ -658,4 +687,71 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
 
     }
 
+    private void onDistributionCreatedEvents() {
+        refreshDistributions();
+    }
+
+    private void onDistributionDeleteEvent(List<DistributionDeletedEvent> events) {
+        final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
+        final List<Object> visibleItemIds = (List<Object>) getVisibleItemIds();
+        boolean shouldRefreshDs = false;
+        for (final DistributionDeletedEvent deletedEvent : events) {
+            final DistributionSetIdName targetIdName = new DistributionSetIdName(deletedEvent.getEntity().getId(),
+                    null, null);
+            if (visibleItemIds.contains(targetIdName)) {
+                dsContainer.removeItem(targetIdName);
+            } else {
+                shouldRefreshDs = true;
+            }
+        }
+
+        if (shouldRefreshDs) {
+            refreshOnDelete();
+        } else {
+            dsContainer.commit();
+        }
+        reSelectItemsAfterDeletionEvent();
+    }
+
+    private void reSelectItemsAfterDeletionEvent() {
+        Set<Object> values = new HashSet<>();
+        if (isMultiSelect()) {
+            values = new HashSet<>((Set<?>) getValue());
+        } else {
+            values.add(getValue());
+        }
+        setValue(null);
+
+        for (final Object value : values) {
+            if (getVisibleItemIds().contains(value)) {
+                select(value);
+            }
+        }
+    }
+
+    private void refreshDistributions() {
+        final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
+        final int size = dsContainer.size();
+        if (size < SPUIDefinitions.MAX_TABLE_ENTRIES) {
+            refreshTablecontainer();
+        }
+        if (size != 0) {
+            setData(SPUIDefinitions.DATA_AVAILABLE);
+        }
+    }
+
+    private void refreshOnDelete() {
+        final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
+        final int size = dsContainer.size();
+        refreshTablecontainer();
+        if (size != 0) {
+            setData(SPUIDefinitions.DATA_AVAILABLE);
+        }
+    }
+
+    private void refreshTablecontainer() {
+        final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
+        dsContainer.refresh();
+        selectRow();
+    }
 }

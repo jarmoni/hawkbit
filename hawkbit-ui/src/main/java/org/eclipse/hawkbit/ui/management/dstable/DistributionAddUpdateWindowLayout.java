@@ -243,8 +243,6 @@ public class DistributionAddUpdateWindowLayout extends CustomComponent {
                 distributionSetManagement.updateDistributionSet(currentDS);
                 notificationMessage.displaySuccess(i18n.get("message.new.dist.save.success",
                         new Object[] { currentDS.getName(), currentDS.getVersion() }));
-                // update table row+details layout
-                eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.UPDATED_ENTITY, currentDS));
             } catch (final EntityAlreadyExistsException entityAlreadyExistsException) {
                 LOG.error("Update distribution failed {}", entityAlreadyExistsException);
                 notificationMessage.displayValidationError(

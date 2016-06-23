@@ -19,6 +19,7 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
 
 import org.eclipse.hawkbit.repository.model.BaseEntity;
+import org.eclipse.persistence.descriptors.DescriptorEvent;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -32,7 +33,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @MappedSuperclass
 @Access(AccessType.FIELD)
 @EntityListeners({ AuditingEntityListener.class, CacheFieldEntityListener.class, EntityPropertyChangeListener.class })
-public abstract class AbstractJpaBaseEntity implements BaseEntity {
+public abstract class AbstractJpaBaseEntity implements BaseEntity,AcceptVisitor {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -178,4 +179,9 @@ public abstract class AbstractJpaBaseEntity implements BaseEntity {
         return true;
     }
 
+    
+    @Override
+	public void postActionOnEntity(AbstractDescriptorEventVisitor visitor, DescriptorEventDetails eventDetails){
+    	visitor.publishEventPostAction(eventDetails);
+    }
 }
