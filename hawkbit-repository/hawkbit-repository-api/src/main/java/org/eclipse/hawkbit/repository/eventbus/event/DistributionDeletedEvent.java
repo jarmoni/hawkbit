@@ -8,25 +8,30 @@
  */
 package org.eclipse.hawkbit.repository.eventbus.event;
 
+import org.eclipse.hawkbit.eventbus.event.AbstractDistributedEvent;
 import org.eclipse.hawkbit.repository.model.DistributionSet;
 
+
 /**
- *
- *
+ * * Defines the {@link AbstractDistributedEvent} for deletion of {@link DistributionSet}.
+
  *
  */
-public class DistributionDeletedEvent extends AbstractBaseEntityEvent<DistributionSet> {
-
-    private static final long serialVersionUID = 1L;
-
+public class DistributionDeletedEvent extends AbstractDistributedEvent{
+	private static final long serialVersionUID = -3308850381757843098L;
+	final Long[] distributionSetIDs;
     /**
      * @param tenant
      *            the tenant for this event
      * @param distributionSetId
      *            the ID of the target which has been deleted
      */
-    public DistributionDeletedEvent(final DistributionSet distributionSet) {
-        super(distributionSet);
+    public DistributionDeletedEvent(final String tenant, final Long...distributionIds) {
+        super(-1, tenant);
+        this.distributionSetIDs = distributionIds;
     }
 
+    public Long[] getDistributionSetIDs() {
+		return distributionSetIDs;
+	}
 }

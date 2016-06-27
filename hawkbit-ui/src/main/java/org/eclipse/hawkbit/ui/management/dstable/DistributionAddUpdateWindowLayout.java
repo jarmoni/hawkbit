@@ -287,8 +287,7 @@ public class DistributionAddUpdateWindowLayout extends CustomComponent {
                     new Object[] { newDist.getName(), newDist.getVersion() }));
             /* close the window */
             closeThisWindow();
-
-            eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.NEW_ENTITY, newDist));
+//            eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.NEW_ENTITY, newDist));
         }
     }
 

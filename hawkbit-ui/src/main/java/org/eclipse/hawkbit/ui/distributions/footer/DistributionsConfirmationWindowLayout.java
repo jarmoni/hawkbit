@@ -360,9 +360,7 @@ public class DistributionsConfirmationWindowLayout extends AbstractConfirmationW
             manageDistUIState.getDeletedDistributionList().forEach(distSetName -> {
                 if (manageDistUIState.getAssignedList().containsKey(distSetName)) {
                     manageDistUIState.getAssignedList().remove(distSetName);
-
                 }
-
             });
 
         }

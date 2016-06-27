@@ -20,6 +20,7 @@ import org.eclipse.hawkbit.repository.eventbus.event.DistributionCreatedEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.DistributionSetUpdateEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.RolloutGroupPropertyChangeEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.RolloutPropertyChangeEvent;
+import org.eclipse.hawkbit.repository.eventbus.event.TargetUpdatedEvent;
 import org.eclipse.hawkbit.repository.jpa.executor.AfterTransactionCommitExecutor;
 import org.eclipse.hawkbit.repository.jpa.model.DescriptorEventDetails.ActionType;
 import org.eclipse.hawkbit.repository.jpa.model.helper.AfterTransactionCommitExecutorHolder;
@@ -98,6 +99,11 @@ public class AbstractDescriptorEventVisitorImpl implements
 				() -> getEventBus().post(
 						new ActionPropertyChangeEvent(action, getChangeSet(
 								Action.class, event))));
+	}
+	
+	public void publishEventAfterUpdate(JpaTarget target, DescriptorEvent event) {
+		getAfterTransactionCommmitExecutor().afterCommit(
+				() -> getEventBus().post(new TargetUpdatedEvent(target)));
 	}
 
 	public void publishEventAfterUpdate(JpaRollout entity, DescriptorEvent event) {

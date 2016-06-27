@@ -13,7 +13,6 @@ import org.eclipse.hawkbit.repository.model.DistributionSet;
 /**
  * Defines the {@link AbstractBaseEntityEvent} of creating a new {@link DistributionSet}.
  *
- *
  */
 public class DistributionCreatedEvent extends AbstractBaseEntityEvent<DistributionSet> {
 

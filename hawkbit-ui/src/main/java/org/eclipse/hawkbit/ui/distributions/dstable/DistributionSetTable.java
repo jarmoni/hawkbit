@@ -142,7 +142,22 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
     void onEvents(final List<?> events) {
         final Object firstEvent = events.get(0);
         if (DistributionCreatedEvent.class.isInstance(firstEvent)) {
-            refreshDistributions();
+            for (DistributionCreatedEvent event : (List<DistributionCreatedEvent>) events) {
+                final List<DistributionSetIdName> visibleItemIds = (List<DistributionSetIdName>) getVisibleItemIds();
+                DistributionSet entity = event.getEntity();
+                if (!entity.isComplete()) {
+                    eventBus.publish(this,
+                            new DistributionTableEvent(BaseEntityEventType.NEW_ENTITY, entity));
+                } else {
+                    DistributionSetIdName itemID = new DistributionSetIdName(entity.getId(),entity.getName(),entity.getVersion());
+                    if(visibleItemIds.contains(itemID)){
+                        Item item = getContainerDataSource().getItem(itemID);
+                        item.getItemProperty(SPUILabelDefinitions.VAR_IS_DISTRIBUTION_COMPLETE).setValue(true);
+                    }
+                }
+            }
+        }else if (DistributionDeletedEvent.class.isInstance(firstEvent)) {
+            onDistributionDeleteEvent((List<DistributionDeletedEvent>) events);
         }
     }
     
@@ -460,7 +475,7 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
 
     @EventBusListenerMethod(scope = EventScope.SESSION)
     void onEvent(final SaveActionWindowEvent event) {
-        if (event == SaveActionWindowEvent.DELETED_DISTRIBUTIONS || event == SaveActionWindowEvent.SAVED_ASSIGNMENTS) {
+        if (event == SaveActionWindowEvent.SAVED_ASSIGNMENTS) {
             UI.getCurrent().access(() -> refreshFilter());
         }
     }
@@ -525,5 +540,54 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
         final Item item = getContainerDataSource().getItem(
                 new DistributionSetIdName(editedDs.getId(), editedDs.getName(), editedDs.getVersion()));
         updateEntity(editedDs, item);
+    }
+    
+    private void onDistributionDeleteEvent(List<DistributionDeletedEvent> events) {
+        final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
+        final List<Object> visibleItemIds = (List<Object>) getVisibleItemIds();
+        boolean shouldRefreshDs = false;
+        for (final DistributionDeletedEvent deletedEvent : events) {
+            Long[] distributionSetIDs = deletedEvent.getDistributionSetIDs();
+            for (Long dsId : distributionSetIDs) {
+                final DistributionSetIdName targetIdName = new DistributionSetIdName(dsId, null, null);
+                if (visibleItemIds.contains(targetIdName)) {
+                    dsContainer.removeItem(targetIdName);
+                } else {
+                    shouldRefreshDs = true;
+                }
+            }
+        }
+
+        if (shouldRefreshDs) {
+            refreshOnDelete();
+        } else {
+            dsContainer.commit();
+        }
+        reSelectItemsAfterDeletionEvent();
+    }
+    
+    private void refreshOnDelete() {
+        final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
+        final int size = dsContainer.size();
+        refreshTablecontainer();
+        if (size != 0) {
+            setData(SPUIDefinitions.DATA_AVAILABLE);
+        }
+    }
+
+    private void reSelectItemsAfterDeletionEvent() {
+        Set<Object> values = new HashSet<>();
+        if (isMultiSelect()) {
+            values = new HashSet<>((Set<?>) getValue());
+        } else {
+            values.add(getValue());
+        }
+        setValue(null);
+
+        for (final Object value : values) {
+            if (getVisibleItemIds().contains(value)) {
+                select(value);
+            }
+        }
     }
 }

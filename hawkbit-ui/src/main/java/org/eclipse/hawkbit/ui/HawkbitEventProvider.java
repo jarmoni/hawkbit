@@ -26,6 +26,7 @@ import org.eclipse.hawkbit.repository.eventbus.event.TargetInfoUpdateEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.TargetTagCreatedBulkEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.TargetTagDeletedEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.TargetTagUpdateEvent;
+import org.eclipse.hawkbit.repository.eventbus.event.TargetUpdatedEvent;
 
 /**
  * The default hawkbit event provider.
@@ -51,6 +52,7 @@ public class HawkbitEventProvider implements UIEventProvider {
         BULK_EVENTS.add(TargetDeletedEvent.class);
         BULK_EVENTS.add(DistributionDeletedEvent.class);
         BULK_EVENTS.add(DistributionCreatedEvent.class);
+        BULK_EVENTS.add(TargetUpdatedEvent.class);
     }
 
     @Override

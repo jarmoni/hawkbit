@@ -115,8 +115,9 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
             onDistributionDeleteEvent((List<DistributionDeletedEvent>) events);
         } else if (DistributionCreatedEvent.class.isInstance(firstEvent)
                 && ((DistributionCreatedEvent) firstEvent).getEntity().isComplete()) {
-            onDistributionCreatedEvents();
-        }
+            onDistributionCreatedEvents((List<DistributionCreatedEvent>) events);
+        } 
+
     }
 
     @EventBusListenerMethod(scope = EventScope.SESSION)
@@ -687,8 +688,11 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
 
     }
 
-    private void onDistributionCreatedEvents() {
-        refreshDistributions();
+    private void onDistributionCreatedEvents(final List<DistributionCreatedEvent> events) {
+        for(DistributionCreatedEvent event : events){
+            eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.NEW_ENTITY, event.getEntity()));
+        }
+//        refreshDistributions();
     }
 
     private void onDistributionDeleteEvent(List<DistributionDeletedEvent> events) {
@@ -696,12 +700,14 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
         final List<Object> visibleItemIds = (List<Object>) getVisibleItemIds();
         boolean shouldRefreshDs = false;
         for (final DistributionDeletedEvent deletedEvent : events) {
-            final DistributionSetIdName targetIdName = new DistributionSetIdName(deletedEvent.getEntity().getId(),
-                    null, null);
-            if (visibleItemIds.contains(targetIdName)) {
-                dsContainer.removeItem(targetIdName);
-            } else {
-                shouldRefreshDs = true;
+            Long[] distributionSetIDs = deletedEvent.getDistributionSetIDs();
+            for (Long dsId : distributionSetIDs) {
+                final DistributionSetIdName targetIdName = new DistributionSetIdName(dsId, null, null);
+                if (visibleItemIds.contains(targetIdName)) {
+                    dsContainer.removeItem(targetIdName);
+                } else {
+                    shouldRefreshDs = true;
+                }
             }
         }
 
