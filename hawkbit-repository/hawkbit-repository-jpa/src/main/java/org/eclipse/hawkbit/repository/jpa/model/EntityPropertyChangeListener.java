@@ -28,9 +28,9 @@ public class EntityPropertyChangeListener extends DescriptorEventAdapter {
 
 	@Override
 	public void postUpdate(final DescriptorEvent event) {
-		AbstractDescriptorEventVisitor visitor = new AbstractDescriptorEventVisitorImpl();
+		AbstractDescriptorEventVisitor visitor = new AbstractDescriptorEventVisitorImpl();	
 		((AbstractJpaBaseEntity) event.getObject()).postActionOnEntity(visitor,
 				new DescriptorEventDetails(ActionType.UPDATE, event));
 	}
-
+	
 }

@@ -13,6 +13,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityManager;
+
 import org.eclipse.hawkbit.repository.eventbus.event.AbstractPropertyChangeEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.ActionCreatedEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.ActionPropertyChangeEvent;
@@ -20,6 +22,8 @@ import org.eclipse.hawkbit.repository.eventbus.event.DistributionCreatedEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.DistributionSetUpdateEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.RolloutGroupPropertyChangeEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.RolloutPropertyChangeEvent;
+import org.eclipse.hawkbit.repository.eventbus.event.TargetCreatedEvent;
+import org.eclipse.hawkbit.repository.eventbus.event.TargetInfoUpdateEvent;
 import org.eclipse.hawkbit.repository.eventbus.event.TargetUpdatedEvent;
 import org.eclipse.hawkbit.repository.jpa.executor.AfterTransactionCommitExecutor;
 import org.eclipse.hawkbit.repository.jpa.model.DescriptorEventDetails.ActionType;
@@ -28,6 +32,7 @@ import org.eclipse.hawkbit.repository.jpa.model.helper.EventBusHolder;
 import org.eclipse.hawkbit.repository.model.Action;
 import org.eclipse.hawkbit.repository.model.Rollout;
 import org.eclipse.hawkbit.repository.model.RolloutGroup;
+import org.eclipse.hawkbit.repository.model.TargetInfo;
 import org.eclipse.hawkbit.repository.model.TenantAwareBaseEntity;
 import org.eclipse.persistence.descriptors.DescriptorEvent;
 import org.eclipse.persistence.internal.sessions.ObjectChangeSet;
@@ -35,6 +40,8 @@ import org.eclipse.persistence.queries.UpdateObjectQuery;
 import org.eclipse.persistence.sessions.changesets.DirectToFieldChangeRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.google.common.eventbus.EventBus;
 
@@ -45,6 +52,7 @@ import com.google.common.eventbus.EventBus;
  */
 public class AbstractDescriptorEventVisitorImpl implements
 		AbstractDescriptorEventVisitor {
+
 	private static final Logger LOG = LoggerFactory
 			.getLogger(AbstractDescriptorEventVisitorImpl.class);
 
@@ -87,6 +95,11 @@ public class AbstractDescriptorEventVisitorImpl implements
 		}
 	}
 
+	public void publishEventAfterCreate(JpaTarget target, DescriptorEvent event) {
+		getAfterTransactionCommmitExecutor().afterCommit(
+				() -> getEventBus().post(new TargetCreatedEvent(target)));
+	}
+
 	public void publishEventAfterCreate(JpaDistributionSet ds,
 			DescriptorEvent event) {
 		getAfterTransactionCommmitExecutor().afterCommit(
@@ -100,10 +113,18 @@ public class AbstractDescriptorEventVisitorImpl implements
 						new ActionPropertyChangeEvent(action, getChangeSet(
 								Action.class, event))));
 	}
-	
+
 	public void publishEventAfterUpdate(JpaTarget target, DescriptorEvent event) {
 		getAfterTransactionCommmitExecutor().afterCommit(
 				() -> getEventBus().post(new TargetUpdatedEvent(target)));
+	}
+
+	public void publishEventAfterUpdate(JpaTargetInfo targetInfo,
+			DescriptorEvent event) {
+		getAfterTransactionCommmitExecutor()
+				.afterCommit(
+						() -> getEventBus().post(
+								new TargetInfoUpdateEvent(targetInfo)));
 	}
 
 	public void publishEventAfterUpdate(JpaRollout entity, DescriptorEvent event) {
