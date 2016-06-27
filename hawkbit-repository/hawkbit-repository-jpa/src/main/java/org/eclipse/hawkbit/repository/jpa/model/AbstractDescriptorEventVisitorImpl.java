@@ -127,6 +127,7 @@ public class AbstractDescriptorEventVisitorImpl implements
 		Map<String, AbstractPropertyChangeEvent<JpaDistributionSet>.Values> changeSet = getChangeSet(
 				JpaDistributionSet.class, event);
 		if (changeSet.containsKey("complete")
+				&& changeSet.get("complete").getOldValue().equals(false)
 				&& changeSet.get("complete").getNewValue().equals(true)) {
 			getAfterTransactionCommmitExecutor().afterCommit(
 					() -> getEventBus().post(

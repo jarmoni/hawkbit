@@ -689,10 +689,7 @@ public class DistributionTable extends AbstractNamedVersionTable<DistributionSet
     }
 
     private void onDistributionCreatedEvents(final List<DistributionCreatedEvent> events) {
-        for(DistributionCreatedEvent event : events){
-            eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.NEW_ENTITY, event.getEntity()));
-        }
-//        refreshDistributions();
+        refreshDistributions();
     }
 
     private void onDistributionDeleteEvent(List<DistributionDeletedEvent> events) {

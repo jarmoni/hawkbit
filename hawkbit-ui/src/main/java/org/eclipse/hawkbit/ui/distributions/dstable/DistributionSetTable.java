@@ -119,7 +119,7 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
             UI.getCurrent().access(() -> addStyleName(SPUIStyleDefinitions.SHOW_DROP_HINT_TABLE));
         }
     }
-    
+
     @EventBusListenerMethod(scope = EventScope.SESSION)
     void onEvents(final DistributionSetUpdateEvent event) {
         final DistributionSet ds = event.getEntity();
@@ -127,40 +127,26 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
                 .getLastSelectedDistribution().get() : null;
         final List<DistributionSetIdName> visibleItemIds = (List<DistributionSetIdName>) getVisibleItemIds();
 
-        // refresh the details tabs only if selected ds is updated 
+        // refresh the details tabs only if selected ds is updated
         if (lastSelectedDsIdName != null && lastSelectedDsIdName.getId().equals(ds.getId())) {
             // update table row+details layout
             eventBus.publish(this, new DistributionTableEvent(BaseEntityEventType.UPDATED_ENTITY, ds));
         } else if (visibleItemIds.stream().filter(e -> e.getId().equals(ds.getId())).findFirst().isPresent()) {
-            //update the name/version details visible in table
+            // update the name/version details visible in table
             UI.getCurrent().access(() -> updateDistributionInTable(event.getEntity()));
         }
     }
-    
-    
+
     @EventBusListenerMethod(scope = EventScope.SESSION)
     void onEvents(final List<?> events) {
         final Object firstEvent = events.get(0);
         if (DistributionCreatedEvent.class.isInstance(firstEvent)) {
-            for (DistributionCreatedEvent event : (List<DistributionCreatedEvent>) events) {
-                final List<DistributionSetIdName> visibleItemIds = (List<DistributionSetIdName>) getVisibleItemIds();
-                DistributionSet entity = event.getEntity();
-                if (!entity.isComplete()) {
-                    eventBus.publish(this,
-                            new DistributionTableEvent(BaseEntityEventType.NEW_ENTITY, entity));
-                } else {
-                    DistributionSetIdName itemID = new DistributionSetIdName(entity.getId(),entity.getName(),entity.getVersion());
-                    if(visibleItemIds.contains(itemID)){
-                        Item item = getContainerDataSource().getItem(itemID);
-                        item.getItemProperty(SPUILabelDefinitions.VAR_IS_DISTRIBUTION_COMPLETE).setValue(true);
-                    }
-                }
-            }
-        }else if (DistributionDeletedEvent.class.isInstance(firstEvent)) {
+            refreshDistributions();
+        } else if (DistributionDeletedEvent.class.isInstance(firstEvent)) {
             onDistributionDeleteEvent((List<DistributionDeletedEvent>) events);
         }
     }
-    
+
     @Override
     protected String getTableId() {
         return SPUIComponentIdProvider.DIST_TABLE_ID;
@@ -173,9 +159,8 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
         final BeanQueryFactory<ManageDistBeanQuery> distributionQF = new BeanQueryFactory<>(ManageDistBeanQuery.class);
 
         distributionQF.setQueryConfiguration(queryConfiguration);
-        return new LazyQueryContainer(
-                new LazyQueryDefinition(true, SPUIDefinitions.PAGE_SIZE, SPUILabelDefinitions.VAR_DIST_ID_NAME),
-                distributionQF);
+        return new LazyQueryContainer(new LazyQueryDefinition(true, SPUIDefinitions.PAGE_SIZE,
+                SPUILabelDefinitions.VAR_DIST_ID_NAME), distributionQF);
     }
 
     private Map<String, Object> prepareQueryConfigFilters() {
@@ -184,8 +169,8 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
                 .ifPresent(value -> queryConfig.put(SPUIDefinitions.FILTER_BY_TEXT, value));
 
         if (null != manageDistUIState.getManageDistFilters().getClickedDistSetType()) {
-            queryConfig.put(SPUIDefinitions.FILTER_BY_DISTRIBUTION_SET_TYPE,
-                    manageDistUIState.getManageDistFilters().getClickedDistSetType());
+            queryConfig.put(SPUIDefinitions.FILTER_BY_DISTRIBUTION_SET_TYPE, manageDistUIState.getManageDistFilters()
+                    .getClickedDistSetType());
         }
 
         return queryConfig;
@@ -320,8 +305,8 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
     private void publishAssignEvent(final Long distId, final SoftwareModule softwareModule) {
         if (manageDistUIState.getLastSelectedDistribution().isPresent()
                 && manageDistUIState.getLastSelectedDistribution().get().getId().equals(distId)) {
-            eventBus.publish(this,
-                    new SoftwareModuleEvent(SoftwareModuleEventType.ASSIGN_SOFTWARE_MODULE, softwareModule));
+            eventBus.publish(this, new SoftwareModuleEvent(SoftwareModuleEventType.ASSIGN_SOFTWARE_MODULE,
+                    softwareModule));
         }
     }
 
@@ -367,9 +352,9 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
         }
 
         if (distributionSetManagement.isDistributionSetInUse(ds)) {
-            notification.displayValidationError(
-                    String.format("Distribution set %s:%s is already assigned to targets and cannot be changed",
-                            ds.getName(), ds.getVersion()));
+            notification.displayValidationError(String.format(
+                    "Distribution set %s:%s is already assigned to targets and cannot be changed", ds.getName(),
+                    ds.getVersion()));
             return false;
         }
         return true;
@@ -452,8 +437,8 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
             if (propertyId == null) {
                 // Styling for row
                 final Item item = getItem(itemId);
-                final Boolean isComplete = (Boolean) item
-                        .getItemProperty(SPUILabelDefinitions.VAR_IS_DISTRIBUTION_COMPLETE).getValue();
+                final Boolean isComplete = (Boolean) item.getItemProperty(
+                        SPUILabelDefinitions.VAR_IS_DISTRIBUTION_COMPLETE).getValue();
                 if (!isComplete) {
                     return SPUIDefinitions.DISABLE_DISTRIBUTION;
                 }
@@ -518,7 +503,7 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
         manageDistUIState.setNoDataAvailableDist(!available);
 
     }
-    
+
     private void refreshDistributions() {
         final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
         final int size = dsContainer.size();
@@ -535,13 +520,13 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
         dsContainer.refresh();
         selectRow();
     }
-    
+
     private void updateDistributionInTable(final DistributionSet editedDs) {
         final Item item = getContainerDataSource().getItem(
                 new DistributionSetIdName(editedDs.getId(), editedDs.getName(), editedDs.getVersion()));
         updateEntity(editedDs, item);
     }
-    
+
     private void onDistributionDeleteEvent(List<DistributionDeletedEvent> events) {
         final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
         final List<Object> visibleItemIds = (List<Object>) getVisibleItemIds();
@@ -565,7 +550,7 @@ public class DistributionSetTable extends AbstractNamedVersionTable<Distribution
         }
         reSelectItemsAfterDeletionEvent();
     }
-    
+
     private void refreshOnDelete() {
         final LazyQueryContainer dsContainer = (LazyQueryContainer) getContainerDataSource();
         final int size = dsContainer.size();
